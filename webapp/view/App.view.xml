@@ -1,0 +1,113 @@
+<mvc:View controllerName="npmlyerje.formularlyerje.controller.App" xmlns:mvc="sap.ui.core.mvc" height="100%" xmlns="sap.m" xmlns:f="sap.ui.layout.form" xmlns:l="sap.ui.layout" xmlns:core="sap.ui.core" xmlns:form="sap.ui.layout.form">
+    <Shell id="shell">
+        <App id="app">
+            <Page id="page" title="Formular Lyerje" busy="{viewModel>/busy}">
+
+                <VBox class="sapUiSmallMargin">
+                    <f:SimpleForm editable="true" layout="ResponsiveGridLayout" labelSpanXL="4" labelSpanL="4" labelSpanM="4" labelSpanS="12" adjustLabelSpan="false" emptySpanXL="0" emptySpanL="0" emptySpanM="0" emptySpanS="0" columnsXL="3" columnsL="3" columnsM="3" singleContainerFullSize="false">
+                        <f:toolbar>
+                            <Toolbar>
+                                <Title text="Inco Furniture" />
+                                <ToolbarSpacer />
+                                <Button icon="sap-icon://print" type="Accept" text="Printo Dokumentin" press="onPrintButtonPressed" />
+                                <Button icon="sap-icon://save" type="Accept" text="Ruaj Dokumentin" press="onSaveButtonPressed" />
+                            </Toolbar>
+                        </f:toolbar>
+                        <f:content>
+                            <core:Title text="" />
+                            <Label text="Data"  />
+                            <DatePicker id="datePayroll" formatPattern="long" change="handleChange" class="sapUiSmallMarginBottom" value="{/headerData/date}" />
+
+                            <Label text="Emri/Mbiemri"  />
+                            <ComboBox  items="{
+                                path: '/clientsData',
+                                sorter: { path: 'fullname' }
+                            }"  value="{/headerData/fullname}" selectionChange="onGetSavedOrder">
+                                <core:Item key="{fullname}" text="{fullname}" />
+                            </ComboBox>
+
+                            <Label text="Shtese/Zbritje"  />
+                            <Input id="difference" value="{/headerData/difference}" submit="onDiffChange" />
+                            <Input id="uomId" width="40%" value="cm" editable="false" />
+
+                            <core:Title text="" />
+                            <Label text="Gjithsej" />
+                            <Input id="allId" value="{/headerData/all}" width="40%"   editable="false" />
+
+                            <Label text="Siperfaqe"  />
+                            <Input id="totalSurface" value="{/headerData/surface}" width="40%"   editable="false" />
+
+                            <Label text="Anesore" />
+                            <Input id="totalSide" value="{/headerData/side}" width="40%"   editable="false" />
+
+                            <Label text="Totali"  />
+                            <Input id="total" value="{/headerData/total}" width="40%"   editable="false" />
+                        </f:content>
+                    </f:SimpleForm>
+                </VBox>
+
+                <ScrollContainer height="100%" width="100%" vertical="true" focusable="true">
+                    <Table id="itemTable" items="{/itemData}">
+                        <headerToolbar>
+                            <OverflowToolbar>
+                                <Title text="Shto permasat" />
+                                <!-- <ToolbarSpacer /> -->
+                                <!-- <Button text="Shto Pagese" icon="sap-icon://sys-add" press="onAddPayrollItem" /> -->
+                            </OverflowToolbar>
+                        </headerToolbar>
+                        <columns>
+                            <Column width="2%">
+                                <Text text="Nr" />
+                            </Column>
+                            <Column width="4%">
+                                <Text text="Lartesi" />
+                            </Column>
+                            <Column width="2%">
+                                <Text text="" />
+                            </Column>
+                            <Column width="4%">
+                                <Text text="Gjatesi" />
+                            </Column>
+                            <Column width="2%">
+                                <Text text="" />
+                            </Column>
+                            <Column width="3%">
+                                <Text text="Cope" />
+                            </Column>
+                            <Column width="25%">
+                                <Text text="Pershkrim" />
+                            </Column>
+                            <Column width="6%">
+                                <Text text="Siperfaqe" />
+                            </Column>
+                            <Column width="6%">
+                                <Text text="Anesore" />
+                            </Column>
+                            <Column width="5%">
+                                <Text text="Fshij matjen" />
+                            </Column>
+                        </columns>
+                        <items>
+                            <ColumnListItem>
+                                <cells>
+                                    <Text text="{number}" />
+                                    <Input key="{height}" value="{height}" liveChange="onHeightChange" submit="onAddItem"/>
+                                    <Input value="X" editable="false" />
+                                    <Input key="{width}" value="{width}" liveChange="onWidthChange" submit="onAddItem"/>
+                                    <Input value="=" editable="false" />
+                                    <Input key="{pieces}" value="{pieces}" liveChange="onPiecesChange" submit="onAddItem" />
+                                    <Input key="{description}" value="{description}" submit="onAddItem"/>
+                                    <Input key="{surface}" value="{surface}" editable="false" />
+                                    <Input key="{side}" value="{side}" editable="false" />
+                                    <Button icon="sap-icon://delete" press="onDeleteItem" type="Reject" />
+                                </cells>
+                            </ColumnListItem>
+                        </items>
+                    </Table>
+                </ScrollContainer>
+
+
+            </Page>
+        </App>
+    </Shell>
+</mvc:View>
