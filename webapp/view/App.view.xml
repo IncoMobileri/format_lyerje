@@ -19,12 +19,7 @@
                             <DatePicker id="datePayroll" formatPattern="long" change="handleChange" class="sapUiSmallMarginBottom" value="{/headerData/date}" />
 
                             <Label text="Emri/Mbiemri"  />
-                            <ComboBox  items="{
-                                path: '/clientsData',
-                                sorter: { path: 'fullname' }
-                            }"  value="{/headerData/fullname}" selectionChange="onGetSavedOrder">
-                                <core:Item key="{fullname}" text="{fullname}" />
-                            </ComboBox>
+                            <Input value="{/headerData/fullname}" showValueHelp="true" valueHelpRequest=".onClientHelp" />
 
                             <Label text="Shtese/Zbritje"  />
                             <Input id="difference" value="{/headerData/difference}" submit="onDiffChange" />
@@ -51,8 +46,6 @@
                         <headerToolbar>
                             <OverflowToolbar>
                                 <Title text="Shto permasat" />
-                                <!-- <ToolbarSpacer /> -->
-                                <!-- <Button text="Shto Pagese" icon="sap-icon://sys-add" press="onAddPayrollItem" /> -->
                             </OverflowToolbar>
                         </headerToolbar>
                         <columns>

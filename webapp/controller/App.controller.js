@@ -5,12 +5,13 @@ sap.ui.define([
     "sap/ui/model/Filter",
     "sap/ui/model/FilterOperator",
     "sap/m/MessageBox",
-    "sap/m/MessageToast"
+    "sap/m/MessageToast",
+    "sap/ui/core/Fragment"
 ],
     /**
      * @param {typeof sap.ui.core.mvc.Controller} Controller
      */
-    function (Controller, JSONModel, DateTypeRange, Filter, FilterOperator, MessageBox, MessageToast) {
+    function (Controller, JSONModel, DateTypeRange, Filter, FilterOperator, MessageBox, MessageToast, Fragment) {
         "use strict";
 
         return Controller.extend("npmlyerje.formularlyerje.controller.App", {
@@ -72,8 +73,7 @@ sap.ui.define([
             },
 
             //get already saved order from client name
-            onGetSavedOrder: function (oEvent) {
-                var oValue = oEvent.getParameters().selectedItem.getText();//get fullname
+            onGetSavedOrder: function (oValue) {
                 var allDataModel = this.getView().getModel();//our main model
                 const firestore = this.getView().getModel("firebase").getData().firestore;
                 const headerLyerjet = firestore.collection("Lyerjet").where("headerId", "==", oValue);//condition to take header id
@@ -421,6 +421,49 @@ sap.ui.define([
 
                 allDataModel.setProperty("/headerData", headerData);//Change the model for header
                 allDataModel.setProperty("/itemData", itemData);//Change the model for item
+            },
+
+            //search help for client
+            onClientHelp: function (oEvent) {
+                const oView = this.getView();
+                const sInputValue = oEvent.getSource().getValue();
+                var allDataModel = this.getView().getModel();
+
+
+                if (!this._pValueHelpClientDialog) {
+                    this._pValueHelpClientDialog = Fragment.load({
+                        id: oView.getId(),
+                        name: "npmlyerje.formularlyerje.view.fragments.clientHelp",
+                        controller: this
+                    }).then(function (oDialog) {
+                        oView.addDependent(oDialog);
+                        return oDialog;
+                    });
+                }
+                this._pValueHelpClientDialog.then(function (oDialog) {
+                    // Create a filter for the binding
+                    oDialog.getBinding("items").filter([
+                        new Filter("fullname", FilterOperator.Contains, sInputValue)
+                    ]);
+                    // Open ValueHelpDialog filtered by the input's value
+                    oDialog.open(sInputValue);
+                });
+
+            },
+
+            onHelpClients: function (oEvent) {
+                const sValue = oEvent.getParameter("value");
+                const oFilter = new Filter("fullname", FilterOperator.Contains, sValue);
+                oEvent.getSource().getBinding("items").filter([oFilter]);
+            },
+
+            onHelpCloseClients: function (oEvent) {
+                const oSelectedItem = oEvent.getParameter("selectedItem");
+                oEvent.getSource().getBinding("items").filter([]);
+
+                if (!oSelectedItem) return;
+                this.onGetSavedOrder(oSelectedItem.getTitle());//get the saved order passing the fullname as parameter
+                // allDataModel.setProperty("/headerData/fullname", oSelectedItem.getTitle());
             },
 
             //print the document

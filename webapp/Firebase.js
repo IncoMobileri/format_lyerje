@@ -1,7 +1,9 @@
 sap.ui.define([
-    "sap/ui/model/json/JSONModel",
+    "sap/ui/model/json/JSONModel"
 ], function (JSONModel) {
     "use strict";
+
+    // var dataModel = this.getView().getModel("devData");
 
     // Firebase-config retrieved from the Firebase-console
     const firebaseConfig = {

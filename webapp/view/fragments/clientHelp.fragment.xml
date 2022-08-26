@@ -1,0 +1,5 @@
+<core:FragmentDefinition xmlns="sap.m" xmlns:core="sap.ui.core">
+	<SelectDialog  title="Te gjitha Lyerjet" items="{/clientsData}" search=".onHelpClients" confirm=".onHelpCloseClients" cancel=".onHelpCloseClients">
+		<StandardListItem title="{fullname}" key="{fullname}" description="{fullname}" />
+	</SelectDialog>
+</core:FragmentDefinition>
