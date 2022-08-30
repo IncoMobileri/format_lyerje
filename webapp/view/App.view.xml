@@ -3,7 +3,7 @@
         <App id="app">
             <Page id="page" title="Formular Lyerje" busy="{viewModel>/busy}">
 
-                <VBox class="sapUiSmallMargin">
+                <VBox class="sapUiSmallMargin" id="test">
                     <f:SimpleForm editable="true" layout="ResponsiveGridLayout" labelSpanXL="4" labelSpanL="4" labelSpanM="4" labelSpanS="12" adjustLabelSpan="false" emptySpanXL="0" emptySpanL="0" emptySpanM="0" emptySpanS="0" columnsXL="3" columnsL="3" columnsM="3" singleContainerFullSize="false">
                         <f:toolbar>
                             <Toolbar>
@@ -11,15 +11,17 @@
                                 <ToolbarSpacer />
                                 <Button icon="sap-icon://print" type="Accept" text="Printo Dokumentin" press="onPrintButtonPressed" />
                                 <Button icon="sap-icon://save" type="Accept" text="Ruaj Dokumentin" press="onSaveButtonPressed" />
+                                <Button icon="sap-icon://download" type="Accept" text="Shkarko Dokumentin" press="onDownloadButtonPressed" />
                             </Toolbar>
                         </f:toolbar>
                         <f:content>
                             <core:Title text="" />
                             <Label text="Data"  />
-                            <DatePicker id="datePayroll" formatPattern="long" change="handleChange" class="sapUiSmallMarginBottom" value="{/headerData/date}" />
+                            <DatePicker id="datePayroll" formatPattern="long" change="handleChange" class="sapUiSmallMarginBottom"  
+                            value="{path:'/headerData/date', type:'sap.ui.model.type.Date', formatOptions: { style: 'medium', source: { pattern: 'dd/MM/yyyy' } }}" />
 
                             <Label text="Emri/Mbiemri"  />
-                            <Input value="{/headerData/fullname}" showValueHelp="true" valueHelpRequest=".onClientHelp" />
+                            <Input value="{/headerData/fullname}" showValueHelp="true" valueHelpRequest=".onClientHelp" submit="onClearModel"/>
 
                             <Label text="Shtese/Zbritje"  />
                             <Input id="difference" value="{/headerData/difference}" submit="onDiffChange" />
@@ -37,6 +39,10 @@
 
                             <Label text="Totali"  />
                             <Input id="total" value="{/headerData/total}" width="40%"   editable="false" />
+
+                            <core:Title text="" />
+                            <Label text="Lloji materialit" />
+                            <Input value="{/headerData/type}" />
                         </f:content>
                     </f:SimpleForm>
                 </VBox>

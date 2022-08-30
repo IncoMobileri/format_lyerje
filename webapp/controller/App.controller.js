@@ -6,12 +6,13 @@ sap.ui.define([
     "sap/ui/model/FilterOperator",
     "sap/m/MessageBox",
     "sap/m/MessageToast",
-    "sap/ui/core/Fragment"
+    "sap/ui/core/Fragment",
+    "sap/m/PDFViewer",
 ],
     /**
      * @param {typeof sap.ui.core.mvc.Controller} Controller
      */
-    function (Controller, JSONModel, DateTypeRange, Filter, FilterOperator, MessageBox, MessageToast, Fragment) {
+    function (Controller, JSONModel, DateTypeRange, Filter, FilterOperator, MessageBox, MessageToast, Fragment, PDFViewer) {
         "use strict";
 
         return Controller.extend("npmlyerje.formularlyerje.controller.App", {
@@ -21,6 +22,7 @@ sap.ui.define([
                 var headerData = {
                     'date': "",
                     'fullname': "",
+                    'type': "",
                     'difference': "",
                     'uom': "",
                     'all': "",
@@ -351,6 +353,11 @@ sap.ui.define([
                 }
             },
 
+            //Download Pdf document
+            onDownloadButtonPressed: function () {
+                this.onDownloadPdf();//download a pdf format of the saved record
+            },
+
             //save the document
             onSaveButtonPressed: function (oEvent) {
                 var allDataModel = this.getView().getModel();
@@ -362,32 +369,48 @@ sap.ui.define([
                 //check if name field is valorized
                 if (!allData.headerData.fullname) { MessageBox.error("Ju lutem vendosni emrin e klientit"); return; }
 
-                checkLyerjetRef.get().then(function (checkClient) {
-                    if (!checkClient.docs.length) {//if it does not find the same user
+                // first we need to get the document counter number
+                const docNumberRef = firestore.collection("Lyerjet");
 
-                        //Create header for new record
-                        const docCreateHeader = firestore.collection("Lyerjet").doc();
-                        allData.headerData.headerId = allData.headerData.fullname;//insert header Id same as fullname
-                        docCreateHeader.set(allData.headerData).then(function () {
-                            //when the header is inserted correctly, proccedd with the items creation inside of the loop
-                            allData.itemData.map((obj) => {
-                                obj.headerId = allData.headerData.fullname;//give the header id of the item the same value of the document path used in the header as a foreign key
-                                firestore.collection("LyerjetItems").doc().set(obj); //insert items
-                            });
+                docNumberRef.get().then(function (docCount) {
+                    var oDocCount = docCount.docs.length;//number of all documents saved
+                    var nextNumber = oDocCount + 1;
+                    var documentPathHeader = 'Lyerje-' + nextNumber//the path to the document id for Lyerje header ex: "Lyerje-1"
 
-                            //delete all the information saved previously and show success message
-                            that.clearModel();//clear tables for fresh start
-                            MessageBox.success("Lyerja u ruajt me sukses!");
+                    checkLyerjetRef.get().then(function (checkClient) {
+                        if (!checkClient.docs.length) {//if it does not find the same user
 
-                        }).catch(function (error) {
-                            MessageBox.error("Ka ndodhur nje gabim, rekordi nuk eshte ruajtur, ju lutem rifreskoni faqen edhe provojeni perseri!");
-                        });
+                            //Create header for new record
+                            const docCreateHeader = firestore.collection("Lyerjet").doc(documentPathHeader);
+                            allData.headerData.headerId = allData.headerData.fullname;//insert header Id same as fullname
+                            docCreateHeader.set(allData.headerData).then(function () {
+                                //when the header is inserted correctly, proccedd with the items creation inside of the loop
+                                allData.itemData.map((obj, index) => {
+                                    var documentPathItem = documentPathHeader + "-" + "Item-" + index;
+                                    obj.headerId = allData.headerData.fullname;//give the header id of the item the same value of the document path used in the header as a foreign key
+                                    firestore.collection("LyerjetItems").doc(documentPathItem).set(obj); //insert items
+                                });
 
-                    } else { //show error message that a user is already saved
-                        MessageBox.error("Ekziston nje lyerje me kete emer, ju lutem ndryshoni emrin")
-                    }
+                                //delete all the information saved previously and show success message
+                                // that.clearModel();//clear tables for fresh start
+                                MessageBox.success("Lyerja u ruajt me sukses!");
+
+                            });//.catch(function (error) {
+                            // MessageBox.error("Ka ndodhur nje gabim, rekordi nuk eshte ruajtur, ju lutem rifreskoni faqen edhe provojeni perseri!");
+                            //});
+
+                        } else { //show error message that a user is already saved
+                            MessageBox.error("Ekziston nje lyerje me kete emer, ju lutem ndryshoni emrin")
+                        }
+                    });
                 });
 
+            },
+
+            onClearModel: function (oEvent) {//clear the model on submit if the field name is empty
+                if (!oEvent.getParameters().value) {
+                    this.clearModel();
+                }
             },
 
             clearModel: function () {//clear the model for fresh start
@@ -396,6 +419,7 @@ sap.ui.define([
                 var headerData = {
                     'date': "",
                     'fullname': "",
+                    'type': "",
                     'difference': "",
                     'uom': "",
                     'all': "",
@@ -475,6 +499,7 @@ sap.ui.define([
                 var oPrint = ""
                 var oTabInit = "<br><body>" +
                     "<div style='box-sizing: content-box; width: 1000px; height: 100%; border: 0px solid black;' class='table-responsive'><img src='/logo/IncoLogo.jpg' alt='Icon' width='120' height='120'>  ";
+                // "<div style='box-sizing: content-box; width: 1000px; height: 100%; border: 0px solid black;' class='table-responsive'> ";
 
                 var oHeader =
                     "<table class='table' width='1000px' style=''>" +
@@ -510,6 +535,8 @@ sap.ui.define([
                     "<div class='table-responsive'><table class='table' width='1000px' style=''><tr  align='left' >" +
                     "<td style='font-size: 20px;font-family: calibri;box-sizing: content-box;border: 0px solid black;width: 40%;' align='left'>" + "<b>Totali</b>" + ": " + allData.headerData.total +
                     "</td>" +
+                    "<td style='font-size: 20px;font-family: calibri;box-sizing: content-box;border: 0px solid black;width: 35%;' align='left'>" + "<b>Lloji materialit</b>" + ": " + allData.headerData.type +
+                    "</td>" +
                     "</table>" +
                     "</div>" +
                     "<div class='table-responsive'><table class='table' width='1000px' style=''>" +
@@ -532,7 +559,7 @@ sap.ui.define([
                 }
 
                 for (var n = 0; n < oCounter; n++) {
-                    var oItemInit = "<div class='table-responsive' style='height:60%px; width: 500px;'>" +
+                    var oItemInit = "<div class='table-responsive' style='height:60%px; width: 1000px;'>" +
                         "<table class='table' style='border-collapse: collapse; width: 1000px;'>";
                     var oItemsColumns =
                         "<tr>" +
@@ -599,12 +626,14 @@ sap.ui.define([
 
                     var ctrlString = "width=1500px,height=1500px";
                     var wind = window.open("", "PrintWindow", ctrlString);
-                    oPrint = ""
+                    oPrint = "";
                     oPrint = oPrint + oTabInit + oHeader + oItemInit + oFooter;
 
                     if (wind !== undefined) {
                         wind.document.write(oPrint);
                     }
+
+                    this.oWind = wind;
                     // Creating a small time delay so that the layout renders
                     setTimeout(function () {
                         wind.print();
@@ -613,6 +642,165 @@ sap.ui.define([
                     }, 500);
 
                 }
-            }
+            },
+
+            onDownloadPdf() {//recreate the print logic in order to download the pdf document
+                var allDataModel = this.getView().getModel();
+                var allData = allDataModel.getData();
+                var oStarter = 0;
+                var oBreak = 0;
+                var oDownload = "";
+                var oTabInit = "<br><body>" +
+                    "<div style='box-sizing: content-box; width: 100%; height: 100%; border: 0px solid black;' class='table-responsive'><img src='/logo/IncoLogo.jpg' alt='Icon' width='100' height='100'>  ";
+
+                var oHeader =
+                    "<table class='table' width='100%' style=''>" +
+                    "<tr align='center' >" +
+                    "<td style='box-sizing: content-box;font-size: 15px;border: 0px solid black;font-family: calibri;width: 45%;' align='left'><b>Emer/Mbiemer</b>" + ": " + allData.headerData.fullname +
+                    "</td>" +
+                    "<td style='box-sizing: content-box;font-size: 20px;border: 0px solid black;font-family: calibri;width: 40%;' align='left'><b>Formular Lyerje</b>" +
+                    "</td>" +
+                    "<td  style='box-sizing: content-box;font-size: 15px;border: 0px solid black;font-family: calibri;width: 10%;' align='left'><b>Data</b>" + ": " + allData.headerData.date +
+                    "</td>" +
+                    "</tr>" +
+                    "</table>" +
+                    "<hr>" +
+                    "<div>" +
+                    "<table class='table' width='100%' style=''>" +
+                    "<tr align='center' >" +
+                    "<td style='box-sizing: content-box;font-size: 15px;border: 0px solid black;font-family: calibri;width: 40%;' align='left'><b>Siperfaqe</b>" + ": " + allData.headerData.surface +
+                    "</td>" +
+                    "<td style='box-sizing: content-box;font-size: 15px;border: 0px solid black;font-family: calibri;width: 35%;' align='left'><b>Gjithsej</b>" + ": " + allData.headerData.all +
+                    "</td>" +
+                    "</tr>" +
+                    "</table>" +
+                    "</div>" +
+                    "<div class='table-responsive'><table class='table' width='100%' style=''>" +
+                    "<tr align='left' >" +
+                    "<td style='font-size: 15px;font-family: calibri;box-sizing: content-box;border: 0px solid black;width: 40%;' align='left'><b>Anesore" + "</b>: " + allData.headerData.side +
+                    "</td>" +
+                    "<td style='box-sizing: content-box;font-size: 15px;border: 0px solid black;font-family: calibri;width: 35%;' align='left'><b>Shtese/Zbritje</b>" + ": " + allData.headerData.difference +
+                    "</td>" +
+                    "</tr>" +
+                    "</table>" +
+                    "</div>" +
+                    "<div class='table-responsive'><table class='table' width='100%' style=''><tr  align='left' >" +
+                    "<td style='font-size: 15px;font-family: calibri;box-sizing: content-box;border: 0px solid black;width: 40%;' align='left'>" + "<b>Totali</b>" + ": " + allData.headerData.total +
+                    "</td>" +
+                    "<td style='font-size: 15px;font-family: calibri;box-sizing: content-box;border: 0px solid black;width: 35%;' align='left'>" + "<b>Lloji materialit</b>" + ": " + allData.headerData.type +
+                    "</td>" +
+                    "</table>" +
+                    "</div>" +
+                    "<div class='table-responsive'><table class='table' width='100%' style=''>" +
+                    "</table>" +
+                    "</div>" +
+                    "<hr>";
+
+                var oCounter = 0;
+                if (allData.itemData.length > 22) {
+                    var oMod = allData.itemData.length % 22;
+                    if (oMod) {
+                        var oRemainder = allData.itemData.length - oMod
+                        oCounter = (oRemainder / 22) + 1;
+                    } else {
+                        oCounter = allData.itemData.length / 22;
+                    }
+                } else {
+                    oCounter = 1;
+                }
+
+                for (var n = 0; n < oCounter; n++) {
+                    var oItemInit = "<div class='table-responsive' style='height:60%px; width: 100%;'>" +
+                        "<table class='table' style='border-collapse: collapse; width: 100%px;'>";
+                    var oItemsColumns =
+                        "<tr>" +
+                        "<th style='text-align: center; border: 0px solid black; font-size: 15px;font-family: calibri;width: 5%;'>Numri</th>" +
+                        "<th style='text-align: center; border: 0px solid black; font-size: 15px;font-family: calibri; width: 8%;'>Lartesi</th>" +
+                        "<th style='text-align: left; font-size: 15px; font-family: calibri; width: 1%;'> </th>" +//X
+                        "<th style='text-align: center;font-size: 15px; border: 0px solid black; font-family: calibri; ;width: 8%;'>Gjatesi</th>" +
+                        "<th style='text-align: left;font-size: 15px; font-family: calibri; width: 1%;'> </th>" +//=
+                        "<th style='text-align: center; font-size: 15px; border: 0px solid black; font-family: calibri; width: 5%;'>Cope</th>" +
+                        "<th style='text-align: center;width:56%; font-size: 15px; border: 0px solid black; font-family: calibri; '>Pershkrim</th>" +
+                        "<th style='text-align: center;font-size: 15px; border: 0px solid black;font-family: calibri;width: 8%;'>Siperfaqe</th>" +
+                        "<th style='text-align: center;width:8%; font-size: 15px; border: 0px solid black; font-family: calibri; '>Anesore</th>" +
+                        "</tr>" +
+                        "</table>" +
+                        "<hr>";
+
+                    oItemInit = oItemInit + oItemsColumns;
+                    if (oCounter > 1) {
+                        if (n === 0) { oStarter = 0; } else { oStarter = oStarter + 22 }
+                        if (n === oCounter - 1) {
+                            oBreak = oStarter + oMod;
+                        } else {
+                            oBreak = oStarter + 22;
+                        }
+                    } else {
+                        oStarter = 0;
+                        oBreak = oStarter + allData.itemData.length;
+                    }
+
+                    for (var i = oStarter; i < oBreak; i++) {
+                        var oDescription = allData.itemData[i].description ? allData.itemData[i].description : "";//if description is empty show nothing
+                        var oItems =
+                            "<table class='table' style='border-collapse: collapse; width: 100%px;'>" +
+                            "<tr style='height: 30px'>" +
+                            "<td style='text-align: center;  border: 0px solid black;font-size: 15px;font-family: calibri; width: 5%;'>" + allData.itemData[i].number + "." +
+                            "</td>" +
+                            "<td style='text-align: center;width:8%; font-size: 15px; border: 0px solid black; font-family: calibri;'>" + allData.itemData[i].height +
+                            "</td>" +
+                            "<td style='text-align: left;font-size: 15px;font-family: calibri; width: 1%;'>" + "X" +
+                            "</td>" +
+                            "<td style='text-align: center ;width:8%; font-size: 15px; border: 0px solid black; font-family: calibri;'>" + allData.itemData[i].width +
+                            "</td>" +
+                            "<td style='  text-align: left; font-size: 14px;font-family: calibri; width: 1%;'>" + "=" +
+                            "</td>" +
+                            "<td style='text-align: center;width:5%; font-size: 15px; border: 0px solid black; font-family: calibri;'>" + allData.itemData[i].pieces +
+                            "</td>" +
+                            "<td style='text-align: left;font-size: 14px; border: 0px solid black; font-family: calibri; width: 56%;'>" + oDescription +
+                            "</td>" +
+                            "<td style='text-align: center;width:8%; font-size: 15px; border: 0px solid black; font-family: calibri;'>" + allData.itemData[i].surface +
+                            "</td>" +
+                            "<td style='text-align: center;width:8%; font-size: 15px; border: 0px solid black; font-family: calibri;'>" + allData.itemData[i].side +
+                            "</td>" +
+                            "</tr>";
+                        oItemInit = oItemInit + oItems;
+                    };
+                    oItemInit = oItemInit + "</table></div>";
+
+                    //creating a footerLayout for print layout
+                    var oFooter = "</table>" +
+                        "</div>" +
+                        "</div>" +
+                        "</div>" +
+                        "</body>";
+
+                    var ctrlString = "width=0px,height=0px";
+                    var windDonload = window.open("", "PrintWindow", ctrlString);
+                    oDownload = "";
+                    oDownload = oDownload + oTabInit + oHeader + oItemInit + oFooter;
+
+                    if (windDonload !== undefined) {
+                        windDonload.document.write(oDownload);
+                    }
+                }
+
+                // Creating a small time delay so that the layout renders
+                setTimeout(function () { }, 500);
+
+                var source = windDonload.document.getElementsByTagName("body")[0];
+                windDonload.close();
+
+                const oOptions = {
+                    margin: [0.3, 0, 0.5, 0],
+                    filename: allData.headerData.fullname + ".pdf",
+                    image: { type: 'jpg', quality: 0.98 },
+                    html2canvas: { scale: 2 },
+                    jsPDF: { unit: 'in', format: 'letter', orientation: 'p' },
+                    pagebreak: { avoid: 'tr' }
+                };
+                html2pdf().set(oOptions).from(source).save();
+            },
+
         });
     });
